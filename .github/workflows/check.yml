@@ -1,11 +1,17 @@
 name: Check-Loi-Code
 on: [push]
+
 jobs:
-  compile:
+  mql-compile:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Compile MQL5
-        uses: x4m/mql-compile-action@v6
+        # Sử dụng bản robot của Kozitw - rất ổn định
+        uses: kozitw/mql-compile-action@v1.3.0
         with:
-          path: 'Experts/MyEA.mq5' # Tên file phải khớp với file bạn tạo ở Bước 2
+          path: 'Experts/MyEA.mq5'
+          # Nếu bạn có file trong thư mục Include thì bỏ dấu # ở dưới
+          # include: '.'
