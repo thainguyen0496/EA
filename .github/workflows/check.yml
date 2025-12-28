@@ -1,4 +1,4 @@
-name: MQL5-Fast-Compile
+name: MQL5-Compile-Final
 on: [push]
 
 jobs:
@@ -8,26 +8,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup MetaEditor
-        shell: powershell
-        run: |
-          # Tải trực tiếp file chạy MetaEditor, không cần cài đặt rườm rà
-          Invoke-WebRequest -Uri "https://github.com/dingmaotu/mql-tools/raw/master/bin/metaeditor64.exe" -OutFile "metaeditor64.exe"
-
-      - name: Compile EA
-        shell: powershell
-        run: |
-          # Chạy lệnh biên dịch và xuất nhật ký ra file log
-          ./metaeditor64.exe /compile:"Experts/MyEA.mq5" /log /inc:"."
-          
-          # Đợi 2 giây để file log kịp ghi xong
-          Start-Sleep -s 2
-
-          # Kiểm tra kết quả và hiển thị lỗi nếu có
-          if (Test-Path "Experts/MyEA.ex5") {
-              Write-Host "✅ THANH CONG! Code ban rat tot."
-          } else {
-              Write-Host "❌ LOI ROI! Chi tiet loi nhu sau:"
-              if (Test-Path "Experts/MyEA.log") { Get-Content "Experts/MyEA.log" }
-              exit 1
-          }
+      - name: Compile MQL5
+        # Sử dụng Action chính chủ và mạnh mẽ nhất hiện nay
+        uses: fx-assistant/mql-compile-action@v2
+        with:
+          path: 'Experts/MyEA.mq5' # Đảm bảo file của bạn nằm ở thư mục Experts
+          verbose: true # Hiển thị chi tiết lỗi nếu có
