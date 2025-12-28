@@ -1,16 +1,44 @@
-name: MQL5-Check-Code
+name: MQL5-Compile-Standalone
 on: [push]
 
 jobs:
-  mql-compile:
+  build:
     runs-on: windows-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Compile MQL5
-        # Sử dụng bản v6 mới nhất và ổn định nhất
-        uses: x4m/mql-compile-action@v6
-        with:
-          path: 'Experts/MyEA.mq5'
-          verbose: true
+      - name: Download and Compile
+        shell: powershell
+        run: |
+          # 1. Tải trực tiếp file biên dịch từ server uy tín (Link dự phòng ổn định)
+          $url = "https://github.com/dingmaotu/mql-tools/raw/master/bin/metaeditor64.exe"
+          Write-Host "Dang tai MetaEditor..."
+          try {
+              Invoke-WebRequest -Uri $url -OutFile "metaeditor64.exe" -UserAgent "Mozilla/5.0"
+          } catch {
+              Write-Host "Loi tai file, dang thu cach khac..."
+              (New-Object Net.WebClient).DownloadFile($url, "metaeditor64.exe")
+          }
+
+          # 2. Tao thu muc va file log
+          New-Item -ItemType Directory -Force -Path "MQL5/Experts"
+          
+          # 3. Chạy biên dịch (Sửa Experts/MyEA.mq5 nếu bạn đặt tên khác)
+          Write-Host "Dang kiem tra code..."
+          ./metaeditor64.exe /compile:"Experts/MyEA.mq5" /log:"compile_result.log" /inc:"."
+          
+          # 4. Doc ket qua
+          if (Test-Path "compile_result.log") {
+              $result = Get-Content "compile_result.log" -Encoding Unicode
+              Write-Host "--- KET QUA KIEM TRA ---"
+              $result
+          }
+
+          # 5. Xac nhan thanh cong
+          if (Test-Path "Experts/MyEA.ex5") {
+              Write-Host "✅ CHUC MUNG: Code cua ban hoan hao!"
+          } else {
+              Write-Host "❌ LOI: Code co loi hoac khong tim thay file MyEA.mq5 trong thu muc Experts."
+              exit 1
+          }
