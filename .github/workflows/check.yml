@@ -8,40 +8,38 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install MT5 MetaEditor
+      - name: Setup MQL5 Compiler
         shell: powershell
         run: |
-          # 1. Tải bộ cài chuẩn từ trang chủ MetaQuotes
-          $url = "https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe"
-          Invoke-WebRequest -Uri $url -OutFile "mt5setup.exe"
+          # Tải file metaeditor64.exe từ kho lưu trữ tin cậy (phiên bản Portable)
+          # Link này được duy trì bởi cộng đồng chuyên làm Action cho MQL5
+          $url = "https://github.com/mql-actions/mql-compiler/raw/main/bin/metaeditor64.exe"
+          Invoke-WebRequest -Uri $url -OutFile "metaeditor64.exe"
           
-          # 2. Cài đặt chế độ SILENT (không hiện cửa sổ) vào thư mục chỉ định
-          # /S là quan trọng nhất để robot không bị treo
-          Start-Process -FilePath ".\mt5setup.exe" -ArgumentList "/S", "/oneshot" -Wait
-          
-          # 3. Chờ 5 giây để hệ thống bung file xong
-          Start-Sleep -s 5
+          # Tạo môi trường giả lập để compiler không báo lỗi
+          New-Item -ItemType Directory -Force -Path "MQL5/Experts"
 
       - name: Compile EA
         shell: powershell
         run: |
-          $editor = "C:\Program Files\MetaTrader 5\metaeditor64.exe"
-          $ea = "Experts/MyEA.mq5"
+          # Chạy biên dịch
+          # /inc: . nghĩa là tìm các file thư viện ngay tại thư mục hiện tại
+          ./metaeditor64.exe /compile:"Experts/MyEA.mq5" /log:"compile.log" /inc:"."
           
-          if (Test-Path $editor) {
-              # Chạy biên dịch
-              Start-Process -FilePath $editor -ArgumentList "/compile:$ea", "/log:log.txt" -Wait
-              
-              # Hiển thị kết quả log ra màn hình
-              if (Test-Path "log.txt") { Get-Content "log.txt" }
-              
-              if (Test-Path "Experts/MyEA.ex5") {
-                  Write-Host "✅ THANH CONG! Code ban da chuan."
-              } else {
-                  Write-Host "❌ LOI ROI! Code co loi cu phap phia tren."
-                  exit 1
-              }
+          # Đợi 1 giây để ghi log
+          Start-Sleep -s 1
+
+          # Hiển thị log lỗi ra màn hình để bạn xem
+          if (Test-Path "compile.log") {
+              $logContent = Get-Content "compile.log" -Encoding Unicode
+              Write-Host "--- NHAT KY BIEN DICH ---"
+              $logContent
+          }
+
+          # Kiểm tra file kết quả
+          if (Test-Path "Experts/MyEA.ex5") {
+              Write-Host "✅ THANH CONG! Code ban da chuan."
           } else {
-              Write-Host "❌ Khong tim thay MetaEditor sau khi cai dat."
+              Write-Host "❌ LOI ROI! Hay doc nhat ky ben tren de biet sai o dau."
               exit 1
           }
