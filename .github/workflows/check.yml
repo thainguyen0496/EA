@@ -1,0 +1,11 @@
+name: Check-Loi-Code
+on: [push]
+jobs:
+  compile:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile MQL5
+        uses: x4m/mql-compile-action@v6
+        with:
+          path: 'Experts/MyEA.mq5' # Tên file phải khớp với file bạn tạo ở Bước 2
