@@ -1,15 +1,15 @@
-name: MQL5-Compile-Final
+name: MQL5-Check-Code
 on: [push]
 
 jobs:
-  build:
+  mql-compile:
     runs-on: windows-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Compile MQL5
-        # Sử dụng bản Action "gọn" nhất, không yêu cầu tải thêm file .exe từ bên ngoài
+        # Sử dụng bản v6 mới nhất và ổn định nhất
         uses: x4m/mql-compile-action@v6
         with:
           path: 'Experts/MyEA.mq5'
