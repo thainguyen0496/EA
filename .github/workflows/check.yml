@@ -8,33 +8,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Compiler
-        shell: powershell
-        run: |
-          # Tải compiler từ kho lưu trữ chính thức của MQL5 trên GitHub qua link raw ổn định
-          $url = "https://raw.githubusercontent.com/swisstrader/MQL5-Docker/master/Metatrader/metaeditor64.exe"
-          # Nếu link trên lỗi, nó sẽ tự dùng link dự phòng
-          try { 
-            Invoke-WebRequest -Uri $url -OutFile "metaeditor64.exe" -ErrorAction Stop 
-          } catch { 
-            Invoke-WebRequest -Uri "https://github.com/dingmaotu/mql-tools/raw/master/bin/metaeditor64.exe" -OutFile "metaeditor64.exe" 
-          }
-
-      - name: Compile EA
-        shell: powershell
-        run: |
-          # Tạo thư mục để tránh lỗi hệ thống
-          New-Item -ItemType Directory -Force -Path "MQL5/Experts"
-          
-          # Biên dịch - Hãy đảm bảo tên file là Experts/MyEA.mq5
-          ./metaeditor64.exe /compile:"Experts/MyEA.mq5" /log:"log.txt" /inc:"."
-          
-          # Hiển thị kết quả
-          if (Test-Path "log.txt") { Get-Content "log.txt" }
-          
-          if (Test-Path "Experts/MyEA.ex5") {
-              Write-Host "✅ THANH CONG! Code ban da chuan."
-          } else {
-              Write-Host "❌ LOI ROI! Hay kiem tra code hoac duong dan file."
-              exit 1
-          }
+      - name: Compile MQL5
+        # Sử dụng bản Action "gọn" nhất, không yêu cầu tải thêm file .exe từ bên ngoài
+        uses: x4m/mql-compile-action@v6
+        with:
+          path: 'Experts/MyEA.mq5'
+          verbose: true
