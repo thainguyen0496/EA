@@ -1,4 +1,4 @@
-name: MQL5-Compile-Standalone
+name: MQL5-Compile-Final
 on: [push]
 
 jobs:
@@ -8,37 +8,46 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download and Compile
+      - name: Install MetaEditor
         shell: powershell
         run: |
-          # 1. Tải trực tiếp file biên dịch từ server uy tín (Link dự phòng ổn định)
-          $url = "https://github.com/dingmaotu/mql-tools/raw/master/bin/metaeditor64.exe"
-          Write-Host "Dang tai MetaEditor..."
-          try {
-              Invoke-WebRequest -Uri $url -OutFile "metaeditor64.exe" -UserAgent "Mozilla/5.0"
-          } catch {
-              Write-Host "Loi tai file, dang thu cach khac..."
-              (New-Object Net.WebClient).DownloadFile($url, "metaeditor64.exe")
-          }
-
-          # 2. Tao thu muc va file log
-          New-Item -ItemType Directory -Force -Path "MQL5/Experts"
+          # 1. Tải bộ cài MT5 chính chủ (Link này không bao giờ 404)
+          $url = "https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe"
+          Write-Host "Dang tai bo cai tu MetaQuotes..."
+          Invoke-WebRequest -Uri $url -OutFile "mt5setup.exe"
           
-          # 3. Chạy biên dịch (Sửa Experts/MyEA.mq5 nếu bạn đặt tên khác)
-          Write-Host "Dang kiem tra code..."
-          ./metaeditor64.exe /compile:"Experts/MyEA.mq5" /log:"compile_result.log" /inc:"."
+          # 2. Cài đặt SILENT (không hiện cửa sổ)
+          Write-Host "Dang cai dat ngam (Silent Install)..."
+          Start-Process -FilePath ".\mt5setup.exe" -ArgumentList "/S", "/oneshot" -Wait
           
-          # 4. Doc ket qua
-          if (Test-Path "compile_result.log") {
-              $result = Get-Content "compile_result.log" -Encoding Unicode
-              Write-Host "--- KET QUA KIEM TRA ---"
-              $result
-          }
+          # 3. Chờ 10 giây để hệ thống bung file hoàn tất
+          Start-Sleep -s 10
 
-          # 5. Xac nhan thanh cong
-          if (Test-Path "Experts/MyEA.ex5") {
-              Write-Host "✅ CHUC MUNG: Code cua ban hoan hao!"
+      - name: Compile EA
+        shell: powershell
+        run: |
+          # 4. Đường dẫn mặc định sau khi cài đặt
+          $metaEditorPath = "C:\Program Files\MetaTrader 5\metaeditor64.exe"
+          $eaPath = "Experts/MyEA.mq5"
+          
+          if (Test-Path $metaEditorPath) {
+              Write-Host "Da tim thay MetaEditor. Bat dau kiem tra code..."
+              # Biên dịch
+              Start-Process -FilePath $metaEditorPath -ArgumentList "/compile:$eaPath", "/log:compile.log" -Wait
+              
+              # Hiển thị log lỗi
+              if (Test-Path "compile.log") {
+                  Get-Content "compile.log" -Encoding Unicode
+              }
+              
+              # Kiểm tra file .ex5
+              if (Test-Path "Experts/MyEA.ex5") {
+                  Write-Host "✅ THANH CONG: Code ban da chuan!"
+              } else {
+                  Write-Host "❌ LOI: Code co loi cu phap hoac sai duong dan file."
+                  exit 1
+              }
           } else {
-              Write-Host "❌ LOI: Code co loi hoac khong tim thay file MyEA.mq5 trong thu muc Experts."
+              Write-Host "❌ Khong tim thay MetaEditor tai $metaEditorPath"
               exit 1
           }
